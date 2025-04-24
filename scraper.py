@@ -14,7 +14,6 @@ def extract_next_links(url, resp):
             links = []
             for a_tag in soup.find_all("a", href=True):
                 links.append(a_tag["href"])
-            print(links)
             
             return links
         
