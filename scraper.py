@@ -147,4 +147,9 @@ def get_stats(soup, url):
 
 
 def result():
-    pass
+    print(f"Number of unique pages: {len(seen)}")
+    print(f"Longest page: {longest_page['url']}, {longest_page['length']}")
+    print(f"Top 50 Words: {sorted(top_50.items(), key = lambda x: -x[1])[:50]}")
+    print("Subdomains found in uci.edu domain:")
+    for domain, count in sorted(subdomains.items()):
+        print(f"{domain}, {count}")
