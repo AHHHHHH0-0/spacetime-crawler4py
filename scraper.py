@@ -1,8 +1,11 @@
 import re
+import time
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
-seen_urls = set()
+POLITE = 1.0
+last_requests = dict()
+seen = set()
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -11,8 +14,17 @@ def scraper(url, resp):
 def extract_next_links(url, resp):
     try:
         if resp.status == 200:
+            # Be polite
+            domain = urlparse(url).netloc   
+            current = time.time()
+            if domain in last_requests:
+                diff = current - last_requests[domain]
+                if diff < POLITE:
+                    time.sleep(POLITE - diff)
+            last_requests[domain] = time.time()
+
+            # Parse
             soup = BeautifulSoup(resp.raw_response.content, "html.parser")
-            
             links = []
             for a_tag in soup.find_all("a", href=True):
                 links.append(a_tag["href"])
@@ -34,11 +46,17 @@ def is_valid(url):
     There are already some conditions that return False.
     """
     try:
-        # Remove fragment from URL before validation
+        # Remove fragment 
         if '#' in url:
             url = url.split('#')[0]
+       
+        # check if seen
+        if url in seen:
+            return False
+        else: 
+            seen.add(url)
             
-        # Check if URL matches allowed domain/path 
+        # Check if allowed
         allowed = [
             r".*\.ics\.uci\.edu.*",
             r".*\.cs\.uci\.edu.*",
@@ -54,7 +72,7 @@ def is_valid(url):
         if parsed.scheme not in {"http", "https"}:
             return False
 
-        # Check if URL has not allowed extensions
+        # Check if not allowed
         skip_extensions_re = re.compile(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             r"|png|tiff?|mid|mp2|mp3|mp4"
