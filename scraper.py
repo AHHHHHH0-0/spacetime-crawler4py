@@ -2,6 +2,8 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+seen_urls = set()
+
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
@@ -26,23 +28,49 @@ def extract_next_links(url, resp):
 
 
 def is_valid(url):
-    # Decide whether to crawl this url or not. 
-    # If you decide to crawl it, return True; otherwise return False.
-    # There are already some conditions that return False.
+    """
+    Decide whether to crawl this url or not. 
+    If you decide to crawl it, return True; otherwise return False.
+    There are already some conditions that return False.
+    """
     try:
-        parsed = urlparse(url)
-        if parsed.scheme not in set(["http", "https"]):
+        # Remove fragment from URL before validation
+        if '#' in url:
+            url = url.split('#')[0]
+            
+        # Check if URL matches allowed domain/path 
+        allowed = [
+            r".*\.ics\.uci\.edu.*",
+            r".*\.cs\.uci\.edu.*",
+            r".*\.informatics\.uci\.edu.*",
+            r".*\.stat\.uci\.edu.*",
+            r"today\.uci\.edu/department/information_computer_sciences/.*" 
+        ]
+        if not any(re.match(pattern, url) for pattern in allowed):
             return False
-        return not re.match(
+
+        # Must be http or https
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            return False
+
+        # Check if URL has not allowed extensions
+        skip_extensions_re = re.compile(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
-            + r"|png|tiff?|mid|mp2|mp3|mp4"
-            + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
-            + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            r"|png|tiff?|mid|mp2|mp3|mp4"
+            r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+            r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+            r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+            r"|epub|dll|cnf|tgz|sha1"
+            r"|thmx|mso|arff|rtf|jar|csv"
+            r"|rm|smil|wmv|swf|wma|zip|rar|gz)$",
+            re.IGNORECASE
+        )
+        if skip_extensions_re.match(parsed.path):
+            return False
+
+        return True
 
     except TypeError:
-        print ("TypeError for ", parsed)
+        print("TypeError for", url)
         raise
