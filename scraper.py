@@ -2,6 +2,7 @@ import re
 import time
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from collections import defaultdict
 
 POLITE = 1.0
 MIN_CHARS = 2000
@@ -9,6 +10,9 @@ MIN_WORDS = 200
 
 last_requests = dict()
 seen = set()
+longest_page = {"url": "", "length": 0}
+top_50 = defaultdict(int)
+subdomains = defaultdict(int)
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -24,7 +28,7 @@ def extract_next_links(url, resp):
             # Parse
             soup = BeautifulSoup(resp.raw_response.content, "html.parser")
 
-            if is_content(soup):
+            if is_content(soup, url):
                 links = []
                 for a_tag in soup.find_all("a", href=True):
                     links.append(a_tag["href"])
@@ -106,7 +110,7 @@ def be_polite(url):
     last_requests[domain] = time.time()
 
 
-def is_content(soup):
+def is_content(soup, url):
     for element in soup.findAll(['script', 'style']):
         element.extract()
 
@@ -116,13 +120,31 @@ def is_content(soup):
     # Reject if less char than lower bound
     if len(space_delimited_text) >  MIN_CHARS and len(space_delimited_text.split()) > MIN_WORDS:
         # Gather stats
-        get_stats(soup)
+        get_stats(soup, url)
         return True
     
     else:
         return False
 
 
-def get_stats(soup):
+def get_stats(soup, url):
+    # Get words
+    text = soup.get_text()
+    words = [word.lower() for word in re.findall(r'\w+', text) if len(word) > 1]
+    
+    # Longest page
+    if len(words) > longest_page["length"]:
+        longest_page["url"] = url
+        longest_page["length"] = len(words)
+    
+    # Word frequencies
+    for word in words:
+        top_50[word] += 1
+    
+    # Subdomain
+    domain = urlparse(url).netloc
+    subdomains[domain] += 1
 
-    pass 
+
+def result():
+    pass
