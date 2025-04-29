@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
 POLITE = 1.0
+MIN_CHARS = 2000
+MIN_WORDS = 200
+
 last_requests = dict()
 seen = set()
 
@@ -20,12 +23,16 @@ def extract_next_links(url, resp):
 
             # Parse
             soup = BeautifulSoup(resp.raw_response.content, "html.parser")
-            links = []
-            for a_tag in soup.find_all("a", href=True):
-                links.append(a_tag["href"])
+
+            if is_content(soup):
+                links = []
+                for a_tag in soup.find_all("a", href=True):
+                    links.append(a_tag["href"])
             
-            return links
-        
+                return links
+            
+            else:
+                return []
         else:
             print(resp.error)
             return []
@@ -97,3 +104,25 @@ def be_polite(url):
         if diff < POLITE:
             time.sleep(POLITE - diff)
     last_requests[domain] = time.time()
+
+
+def is_content(soup):
+    for element in soup.findAll(['script', 'style']):
+        element.extract()
+
+    webtext = soup.get_text()
+    space_delimited_text = re.sub('\s+',' ',webtext)
+
+    # Reject if less char than lower bound
+    if len(space_delimited_text) >  MIN_CHARS and len(space_delimited_text.split()) > MIN_WORDS:
+        # Gather stats
+        get_stats(soup)
+        return True
+    
+    else:
+        return False
+
+
+def get_stats(soup):
+
+    pass 
