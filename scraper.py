@@ -28,7 +28,7 @@ def extract_next_links(url, resp):
         
         else:
             print(resp.error)
-            return list()
+            return []
         
     except Exception as e:
         print(f"ERROR: {e}")
