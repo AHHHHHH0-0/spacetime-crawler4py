@@ -11,6 +11,7 @@ def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
+
 def extract_next_links(url, resp):
     try:
         if resp.status == 200:
@@ -88,11 +89,11 @@ def is_valid(url):
         raise
 
 
-    def be_polite(url):
-        domain = urlparse(url).netloc   
-        current = time.time()
-        if domain in last_requests:
-            diff = current - last_requests[domain]
-            if diff < POLITE:
-                time.sleep(POLITE - diff)
-        last_requests[domain] = time.time()
+def be_polite(url):
+    domain = urlparse(url).netloc   
+    current = time.time()
+    if domain in last_requests:
+        diff = current - last_requests[domain]
+        if diff < POLITE:
+            time.sleep(POLITE - diff)
+    last_requests[domain] = time.time()
