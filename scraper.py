@@ -15,13 +15,7 @@ def extract_next_links(url, resp):
     try:
         if resp.status == 200:
             # Be polite
-            domain = urlparse(url).netloc   
-            current = time.time()
-            if domain in last_requests:
-                diff = current - last_requests[domain]
-                if diff < POLITE:
-                    time.sleep(POLITE - diff)
-            last_requests[domain] = time.time()
+            be_polite(url)
 
             # Parse
             soup = BeautifulSoup(resp.raw_response.content, "html.parser")
@@ -92,3 +86,13 @@ def is_valid(url):
     except TypeError:
         print("TypeError for", url)
         raise
+
+
+    def be_polite(url):
+        domain = urlparse(url).netloc   
+        current = time.time()
+        if domain in last_requests:
+            diff = current - last_requests[domain]
+            if diff < POLITE:
+                time.sleep(POLITE - diff)
+        last_requests[domain] = time.time()
