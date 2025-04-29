@@ -21,24 +21,25 @@ def scraper(url, resp):
 
 def extract_next_links(url, resp):
     try:
-        if resp.status == 200:
+        if resp and resp.status == 200 and resp.raw_response and resp.raw_response.content:
             # Be polite
             be_polite(url)
-
+            
             # Parse
             soup = BeautifulSoup(resp.raw_response.content, "html.parser")
-
-            if is_content(soup, url):
+            
+            if is_content(soup):
                 links = []
                 for a_tag in soup.find_all("a", href=True):
                     links.append(a_tag["href"])
-            
+                
                 return links
             
             else:
                 return []
         else:
-            print(resp.error)
+            if resp:
+                print(f"ERROR: {resp.error}")
             return []
         
     except Exception as e:
@@ -110,7 +111,7 @@ def be_polite(url):
     last_requests[domain] = time.time()
 
 
-def is_content(soup, url):
+def is_content(soup):
     for element in soup.findAll(['script', 'style']):
         element.extract()
 
@@ -120,21 +121,21 @@ def is_content(soup, url):
     # Reject if less char than lower bound
     if len(space_delimited_text) >  MIN_CHARS and len(space_delimited_text.split()) > MIN_WORDS:
         # Gather stats
-        get_stats(soup, url)
+        get_stats(soup)
         return True
     
     else:
         return False
 
 
-def get_stats(soup, url):
+def get_stats(soup):
     # Get words
     text = soup.get_text()
     words = [word.lower() for word in re.findall(r'\w+', text) if len(word) > 1]
     
     # Longest page
     if len(words) > longest_page["length"]:
-        longest_page["url"] = url
+        longest_page["url"] = soup.url
         longest_page["length"] = len(words)
     
     # Word frequencies
@@ -142,7 +143,7 @@ def get_stats(soup, url):
         top_50[word] += 1
     
     # Subdomain
-    domain = urlparse(url).netloc
+    domain = urlparse(soup.url).netloc
     subdomains[domain] += 1
 
 
