@@ -63,6 +63,18 @@ def is_valid(url):
         else: 
             seen.add(url)
             
+        # Check calendar traps
+        calendar_patterns = [
+            r'calendar',
+            r'event',
+            r'week=\d+',
+            r'month=\d+',
+            r'year=\d+'
+        ]
+        
+        if any(re.search(pattern, url.lower()) for pattern in calendar_patterns):
+            return False
+            
         # Check if allowed
         allowed = [
             r".*\.ics\.uci\.edu.*",
