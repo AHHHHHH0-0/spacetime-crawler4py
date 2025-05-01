@@ -29,7 +29,7 @@ def extract_next_links(url, resp):
             # Parse
             soup = BeautifulSoup(resp.raw_response.content, "html.parser")
             
-            if is_content(soup):
+            if is_content(soup, url):
                 links = []
                 for a_tag in soup.find_all("a", href=True):
                     links.append(a_tag["href"])
@@ -124,7 +124,7 @@ def be_polite(url):
     last_requests[domain] = time.time()
 
 
-def is_content(soup):
+def is_content(soup, url):
     for element in soup.findAll(['script', 'style']):
         element.extract()
 
@@ -132,32 +132,36 @@ def is_content(soup):
     space_delimited_text = re.sub('\s+',' ',webtext)
 
     # Reject if less char than lower bound
-    if len(space_delimited_text) >  MIN_CHARS and len(space_delimited_text.split()) > MIN_WORDS:
-        # Gather stats
-        get_stats(soup)
+    if len(space_delimited_text) > MIN_CHARS:
+        # Gather stats with the actual URL
+        get_stats(soup, url)
         return True
     
     else:
         return False
 
 
-def get_stats(soup):
+def get_stats(soup, url):
     # Get words
     text = soup.get_text()
     words = [word.lower() for word in re.findall(r'\w+', text) if len(word) > 1]
     
     # Longest page
     if len(words) > longest_page["length"]:
-        longest_page["url"] = soup.url
+        longest_page["url"] = url
         longest_page["length"] = len(words)
     
     # Word frequencies
     for word in words:
         top_50[word] += 1
     
-    # Subdomain
-    domain = urlparse(soup.url).netloc
-    subdomains[domain] += 1
+    # Track UCI subdomains
+    try:
+        domain = urlparse(url).netloc
+        if domain and domain.endswith('.uci.edu'):
+            subdomains[domain] += 1 
+    except Exception as e:
+        print(f"Error processing domain for {url}: {e}")
 
 
 def result():
