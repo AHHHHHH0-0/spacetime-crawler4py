@@ -197,3 +197,11 @@ def result():
     print("Subdomains found in uci.edu domain:")
     for domain, count in sorted(subdomains.items()):
         print(f"{domain}, {count}")
+
+    with open("output.txt", "w", encoding="utf-8") as f:
+        f.write(f"Number of unique pages: {len(seen)}\n")
+        f.write(f"Longest page: {longest_page['url']}, {longest_page['length']}\n")
+        f.write(f"Top 50 Words (excluding stopwords): {sorted(filtered_top_50.items(), key=lambda x: -x[1])[:50]}\n")
+        f.write("Subdomains found in uci.edu domain:\n")
+        for domain, count in sorted(subdomains.items()):
+            f.write(f"{domain}, {count}\n")
